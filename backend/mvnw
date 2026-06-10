@@ -1,0 +1,92 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Apache Maven Wrapper startup batch script
+# ----------------------------------------------------------------------------
+
+set -e
+
+# Find the project basedir, i.e., the directory that contains the folder ".mvn".
+find_maven_basedir() {
+  if [ -z "$1" ]; then
+    echo "Path not specified to find_maven_basedir"
+    return 1
+  fi
+
+  basedir="$1"
+  wdir="$1"
+  while [ "$wdir" != '/' ]; do
+    if [ -d "$wdir"/.mvn ]; then
+      basedir=$wdir
+      break
+    fi
+    wdir=$(cd "$wdir/.." && pwd)
+  done
+  printf '%s' "$(cd "$basedir" && pwd)"
+}
+
+# concatenates all lines of a file
+concat_lines() {
+  if [ -f "$1" ]; then
+    echo "$(tr -s '\n' ' ' < "$1")"
+  fi
+}
+
+BASE_DIR=$(find_maven_basedir "$(dirname "$0")")
+export BASE_DIR
+
+##########################################################################################
+# Extension to allow automatically downloading the maven-wrapper.jar from Maven-central
+# This allows using the maven-wrapper.jar to bootstrap and download Maven in the first place.
+
+if [ -r "$BASE_DIR/.mvn/wrapper/maven-wrapper.jar" ]; then
+  if [ "$MVNW_VERBOSE" = true ]; then
+    echo "Found $BASE_DIR/.mvn/wrapper/maven-wrapper.jar"
+  fi
+else
+  if [ "$MVNW_VERBOSE" = true ]; then
+    echo "Couldn't find $BASE_DIR/.mvn/wrapper/maven-wrapper.jar, downloading it ..."
+  fi
+
+  DOWNLOAD_URL="$BASE_DIR/.mvn/wrapper/maven-wrapper.properties"
+  if [ -r "$DOWNLOAD_URL" ]; then
+    WRAPPER_URL=$(grep "wrapperUrl" "$DOWNLOAD_URL" | cut -d= -f2)
+    if [ "$MVNW_VERBOSE" = true ]; then
+      echo "Downloading from: $WRAPPER_URL"
+    fi
+    if command -v wget > /dev/null; then
+      wget "$WRAPPER_URL" -O "$BASE_DIR/.mvn/wrapper/maven-wrapper.jar" 2>&1 || die "Failed to download from $WRAPPER_URL"
+    elif command -v curl > /dev/null; then
+      curl -o "$BASE_DIR/.mvn/wrapper/maven-wrapper.jar" "$WRAPPER_URL" -f 2>&1 || die "Failed to download from $WRAPPER_URL"
+    fi
+  fi
+fi
+
+MAVEN_OPTS="$(concat_lines "$BASE_DIR/.mvn/jvm.config") $MAVEN_OPTS"
+
+# Provide a "standardized" way to get the CLI args that will work with both
+exec "$JAVACMD" \
+  $MAVEN_OPTS \
+  $MAVEN_DEBUG_OPTS \
+  -classpath "$BASE_DIR/.mvn/wrapper/maven-wrapper.jar" \
+  "-Dmaven.multiModuleProjectDirectory=$BASE_DIR" \
+  ${WRAPPER_LAUNCHER:-org.apache.maven.wrapper.MavenWrapperMain} \
+  "$MAVEN_CONFIG" "$@"
